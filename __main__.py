@@ -112,6 +112,21 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(DATA)
     await update.message.reply_text("Цитата одобрена и добавлена в основной список.")
 
+async def reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("У вас нет прав для отклонения цитат.")
+        return
+    if not context.args or not context.args[0].isdigit():
+        await update.message.reply_text("Пожалуйста, укажите номер цитаты для отклонения.")
+        return
+    index = int(context.args[0]) - 1
+    if index < 0 or index >= len(DATA["suggestions"]):
+        await update.message.reply_text("Неверный номер цитаты.")
+        return
+    quote = DATA["suggestions"].pop(index)["quote"]
+    await update.message.reply_text("Цитата одобрена и добавлена в основной список.")
+
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
@@ -119,12 +134,13 @@ def save_data(data):
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     commands_text = (
         "📜 Список команд WolfQuotes Bot:\n\n"
-        "/suggest <цитата> — предложить новую цитату\n"
-        "/addquote <цитата> — добавить цитату (только админ)\n"
-        "/listsuggest — показать предложения цитат (только админ)\n"
-        "/approve <номер> — одобрить предложение и добавить в основной список (только админ)\n"
-        "/help — показать список команд\n"
-        "/start — приветствие и список команд"
+        "/suggest <цитата> - предложить новую цитату\n"
+        "/addquote <цитата> - добавить цитату (только для админа)\n"
+        "/listsuggest - показать предложения цитат (только для админа)\n"
+        "/approve <номер> - одобрить предложение и добавить в основной список (только для админа)\n"
+        "/help - показать список команд\n"
+        "/start - приветствие и список команд"
+        "/reject - отклонить цитату (только для админа)"
     )
     await update.message.reply_text(commands_text)
 
@@ -132,10 +148,11 @@ async def post_init(application):
     from telegram import BotCommand
     commands = [
         BotCommand("suggest", "Предложить новую цитату"),
-        BotCommand("addquote", "Добавить цитату (только админ)"),
-        BotCommand("listsuggest", "Показать предложения (только админ)"),
-        BotCommand("approve", "Одобрить цитату по номеру (только админ)"),
+        BotCommand("addquote", "Добавить цитату (только для админа)"),
+        BotCommand("listsuggest", "Показать предложения (только для админа)"),
+        BotCommand("approve", "Одобрить цитату по номеру (только для админа)"),
         BotCommand("help", "Список всех команд"),
+        BotCommand("reject", "Отклонить цитату (только для админа)")
     ]
     await application.bot.set_my_commands(commands)
 
@@ -166,6 +183,7 @@ def main():
     application.add_handler(CommandHandler("approve", approve))
     application.add_handler(CommandHandler("help", show_commands))
     application.add_handler(CommandHandler("start", show_commands))
+    application.add_handler(CommandHandler("reject", reject))
 
     print("Бот запущен. Нажми Ctrl+C для выхода.")
     application.run_polling()
