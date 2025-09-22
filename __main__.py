@@ -17,7 +17,7 @@ def load_data():
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     else:
-        return {
+        data = {
             "quotes": [
                 "Вълкъ слабее льва и тигра, но в цирке не выступает",
                 "Вълкъ - не тот, кто wolf, а тот, кто Canis lupus",
@@ -37,6 +37,9 @@ def load_data():
             ],
             "suggestions": []
         }
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        return data
 
 DATA = load_data()
 
@@ -139,7 +142,7 @@ async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/listsuggest - показать предложения цитат (только для админа)\n"
         "/approve <номер> - одобрить предложение и добавить в основной список (только для админа)\n"
         "/help - показать список команд\n"
-        "/start - приветствие и список команд"
+        "/start - приветствие и список команд\n"
         "/reject - отклонить цитату (только для админа)"
     )
     await update.message.reply_text(commands_text)
