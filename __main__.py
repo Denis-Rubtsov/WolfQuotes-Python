@@ -4,6 +4,8 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent, Update
 from telegram.ext import Application, InlineQueryHandler, ContextTypes
 from uuid import uuid4
 from dotenv import load_dotenv
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 load_dotenv()
 
@@ -42,6 +44,18 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await update.inline_query.answer(results, cache_time=0, is_personal=True)
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running!")
+
+def run_http_server():
+    port = int(os.getenv("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    print(f"HTTP healthcheck server запущен на порту {port}")
+    server.serve_forever()
+
 async def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
     if not token:
@@ -57,4 +71,5 @@ async def main():
 
 if __name__ == '__main__':
     import asyncio
+    threading.Thread(target=run_http_server, daemon=True).start()
     asyncio.run(main())
