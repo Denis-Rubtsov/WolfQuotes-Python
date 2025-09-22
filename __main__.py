@@ -56,7 +56,7 @@ def run_http_server():
     print(f"HTTP healthcheck server запущен на порту {port}")
     server.serve_forever()
 
-async def main():
+def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
     if not token:
         print("Не найден TELEGRAM_BOT_TOKEN в переменных среды")
@@ -67,9 +67,8 @@ async def main():
     application.add_handler(InlineQueryHandler(inline_query_handler))
 
     print("Бот запущен. Нажми Ctrl+C для выхода.")
-    await application.run_polling()
+    application.run_polling()
 
 if __name__ == '__main__':
-    import asyncio
     threading.Thread(target=run_http_server, daemon=True).start()
-    asyncio.run(main())
+    main()
