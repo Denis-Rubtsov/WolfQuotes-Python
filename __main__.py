@@ -116,6 +116,29 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
+async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    commands_text = (
+        "📜 Список команд WolfQuotes Bot:\n\n"
+        "/suggest <цитата> — предложить новую цитату\n"
+        "/addquote <цитата> — добавить цитату (только админ)\n"
+        "/listsuggest — показать предложения цитат (только админ)\n"
+        "/approve <номер> — одобрить предложение и добавить в основной список (только админ)\n"
+        "/help — показать список команд\n"
+        "/start — приветствие и список команд"
+    )
+    await update.message.reply_text(commands_text)
+
+async def post_init(application):
+    from telegram import BotCommand
+    commands = [
+        BotCommand("suggest", "Предложить новую цитату"),
+        BotCommand("addquote", "Добавить цитату (только админ)"),
+        BotCommand("listsuggest", "Показать предложения (только админ)"),
+        BotCommand("approve", "Одобрить цитату по номеру (только админ)"),
+        BotCommand("help", "Список всех команд"),
+    ]
+    await application.bot.set_my_commands(commands)
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -141,6 +164,8 @@ def main():
     application.add_handler(CommandHandler("addquote", addquote))
     application.add_handler(CommandHandler("listsuggest", listsuggest))
     application.add_handler(CommandHandler("approve", approve))
+    application.add_handler(CommandHandler("help", show_commands))
+    application.add_handler(CommandHandler("start", show_commands))
 
     print("Бот запущен. Нажми Ctrl+C для выхода.")
     application.run_polling()
