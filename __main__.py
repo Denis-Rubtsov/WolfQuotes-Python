@@ -40,7 +40,7 @@ def load_data():
 
 DATA = load_data()
 
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 def get_random_quote():
     return random.choice(DATA["quotes"])
