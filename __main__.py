@@ -65,33 +65,45 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 async def suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if not context.args:
-        await update.message.reply_text("Пожалуйста, укажите цитату для предложения.")
+        await update.message.reply_text("Пожалуйста, укажите цитату для предложения")
         return
     quote = " ".join(context.args).strip()
     DATA["suggestions"].append({"user_id": user.id, "quote": quote})
     save_data(DATA)
-    await update.message.reply_text("Спасибо за предложение! Ваша цитата отправлена на рассмотрение.")
+    await update.message.reply_text("Спасибо за предложение! Ваша цитата отправлена на рассмотрение")
+
+    admin_id = int(os.getenv("ADMIN_ID"))
+    try:
+        await context.bot.send_message(
+            chat_id=admin_id,
+            text=(
+                f"📩 Новое предложение от @{user.username or user.first_name} "
+                f"(ID: {user.id}):\n\n{quote}"
+            )
+        )
+    except Exception as e:
+        print(f"Не удалось уведомить админа: {e}")
 
 async def addquote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для добавления цитат.")
+        await update.message.reply_text("У вас нет прав для добавления цитат")
         return
     if not context.args:
-        await update.message.reply_text("Пожалуйста, укажите цитату для добавления.")
+        await update.message.reply_text("Пожалуйста, укажите цитату для добавления")
         return
     quote = " ".join(context.args).strip()
     DATA["quotes"].append(quote)
     save_data(DATA)
-    await update.message.reply_text("Цитата успешно добавлена.")
+    await update.message.reply_text("Цитата успешно добавлена")
 
 async def listsuggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для просмотра предложений.")
+        await update.message.reply_text("У вас нет прав для просмотра предложений")
         return
     if not DATA["suggestions"]:
-        await update.message.reply_text("Нет предложенных цитат.")
+        await update.message.reply_text("Нет предложенных цитат")
         return
     messages = []
     for i, item in enumerate(DATA["suggestions"], start=1):
@@ -101,34 +113,34 @@ async def listsuggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для одобрения цитат.")
+        await update.message.reply_text("У вас нет прав для одобрения цитат")
         return
     if not context.args or not context.args[0].isdigit():
-        await update.message.reply_text("Пожалуйста, укажите номер цитаты для одобрения.")
+        await update.message.reply_text("Пожалуйста, укажите номер цитаты для одобрения")
         return
     index = int(context.args[0]) - 1
     if index < 0 or index >= len(DATA["suggestions"]):
-        await update.message.reply_text("Неверный номер цитаты.")
+        await update.message.reply_text("Неверный номер цитаты")
         return
     quote = DATA["suggestions"].pop(index)["quote"]
     DATA["quotes"].append(quote)
     save_data(DATA)
-    await update.message.reply_text("Цитата одобрена и добавлена в основной список.")
+    await update.message.reply_text("Цитата одобрена и добавлена в основной список")
 
 async def reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для отклонения цитат.")
+        await update.message.reply_text("У вас нет прав для отклонения цитат")
         return
     if not context.args or not context.args[0].isdigit():
-        await update.message.reply_text("Пожалуйста, укажите номер цитаты для отклонения.")
+        await update.message.reply_text("Пожалуйста, укажите номер цитаты для отклонения")
         return
     index = int(context.args[0]) - 1
     if index < 0 or index >= len(DATA["suggestions"]):
-        await update.message.reply_text("Неверный номер цитаты.")
+        await update.message.reply_text("Неверный номер цитаты")
         return
     quote = DATA["suggestions"].pop(index)["quote"]
-    await update.message.reply_text("Цитата одобрена и добавлена в основной список.")
+    await update.message.reply_text("Цитата одобрена и добавлена в основной список")
 
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
