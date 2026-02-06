@@ -27,7 +27,7 @@ def load_data():
                 "Чтобы не искать выход, посмотри внимательно на вход.",
                 "Каждый может кинуть камень в вълка, но не каждый может кинуть вълка в камень",
                 "Робота - не волк. Работа - это ворк, а волк - это ходить",
-                "Не тот волк кто не волк а волк тот кто волк но не каждый волк настоящий волк а только настоящий волк волк",
+                "Не тот вълкъ кто не вълкъ а вълкъ тот кто вълкъ но не каждый вълкъ настоящий вълкъ а только настоящий вълкъ вълкъ",
                 "Припапупапри",
                 "Не стоит искать вълка там, где его нет, - его там нет",
                 "Друг наполовину - это всегда наполовину друг",
@@ -49,14 +49,32 @@ def get_random_quote():
     return random.choice(DATA["quotes"])
 
 async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query
+    query = update.inline_query.query.strip()
+
+    quote_text = None
+    title = "Вспомнить мудрость"
+
+    # если пользователь ввёл число — считаем, что это номер цитаты
+    if query.isdigit():
+        index = int(query) - 1
+        if 0 <= index < len(DATA["quotes"]):
+            quote_text = DATA["quotes"][index]
+            title = f"Мудрость №{query}"
+        else:
+            quote_text = "❌ Цитаты с таким номером не существует."
+            title = "Ошибка"
+    else:
+        quote_text = get_random_quote()
 
     results = [
         InlineQueryResultArticle(
             id=str(uuid4()),
-            title="Вспомнить мудрость",
-            input_message_content=InputTextMessageContent(f"{get_random_quote()}\n\nМудростью поделился Великий Вълкъ - @Vlk_quote_bot"),
-            description="Вы вспоминаете мудрость Великого вълка"
+            title=title,
+            input_message_content=InputTextMessageContent(
+                f"{quote_text}\n\n"
+                "Мудростью поделился Великий Вълкъ — @Vlk_quote_bot"
+            ),
+            description=quote_text[:80]
         )
     ]
 
