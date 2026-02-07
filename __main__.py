@@ -10,7 +10,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 load_dotenv()
 
-DATA_FILE = "quotes.json"
+DATA_FILE = "/data/quotes.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
