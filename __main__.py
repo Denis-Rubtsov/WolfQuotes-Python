@@ -10,7 +10,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 load_dotenv()
 
-DATA_FILE = "quotes.json"
+DATA_FILE = "/data/quotes.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -71,8 +71,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             id=str(uuid4()),
             title=title,
             input_message_content=InputTextMessageContent(
-                f"{quote_text}\n\n"
-                "Мудростью поделился Великий Вълкъ — @Vlk_quote_bot"
+                f"{quote_text}"
             ),
             description=quote_text[:80]
         )
@@ -166,7 +165,7 @@ def save_data(data):
 
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     commands_text = (
-        "📜 Список команд WolfQuotes Bot:\n\n"
+        '📜 Список команд бота "Вълчьи цитаты":\n\n'
         "/suggest <цитата> - предложить новую цитату\n"
         "/addquote <цитата> - добавить цитату (только для админа)\n"
         "/listsuggest - показать предложения цитат (только для админа)\n"
