@@ -1,8 +1,22 @@
 import os
 import random
 import json
-from telegram import InlineQueryResultArticle, InputTextMessageContent, Update
-from telegram.ext import Application, InlineQueryHandler, ContextTypes, CommandHandler
+from telegram import (
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup
+)
+from telegram.ext import (
+    Application,
+    InlineQueryHandler,
+    ContextTypes,
+    CommandHandler,
+    MessageHandler,
+    CallbackQueryHandler,
+    filters
+)
 from uuid import uuid4
 from dotenv import load_dotenv
 import threading
@@ -80,39 +94,16 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     await update.inline_query.answer(results, cache_time=0, is_personal=True)
 
 async def suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if not context.args:
-        await update.message.reply_text("Пожалуйста, укажите цитату для предложения")
-        return
-    quote = " ".join(context.args).strip()
-    DATA["suggestions"].append({"user_id": user.id, "quote": quote})
-    save_data(DATA)
-    await update.message.reply_text("Спасибо за предложение! Ваша цитата отправлена на рассмотрение")
-
-    admin_id = int(os.getenv("ADMIN_ID"))
-    try:
-        await context.bot.send_message(
-            chat_id=admin_id,
-            text=(
-                f"📩 Новое предложение от @{user.username or user.first_name} "
-                f"(ID: {user.id}):\n\n{quote}"
-            )
-        )
-    except Exception as e:
-        print(f"Не удалось уведомить админа: {e}")
+    context.user_data["mode"] = "suggest"
+    await update.message.reply_text("✍️ Введите цитату для предложения.")
 
 async def addquote(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if user.id != ADMIN_ID:
+    if update.effective_user.id != ADMIN_ID:
         await update.message.reply_text("У вас нет прав для добавления цитат")
         return
-    if not context.args:
-        await update.message.reply_text("Пожалуйста, укажите цитату для добавления")
-        return
-    quote = " ".join(context.args).strip()
-    DATA["quotes"].append(quote)
-    save_data(DATA)
-    await update.message.reply_text("Цитата успешно добавлена")
+
+    context.user_data["mode"] = "add"
+    await update.message.reply_text("🐺 Введите цитату для добавления.")
 
 async def listsuggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -162,6 +153,57 @@ async def reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if "mode" not in context.user_data:
+        return
+
+    text = update.message.text.strip()
+    context.user_data["pending_quote"] = text
+
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ Подтвердить", callback_data="confirm"),
+            InlineKeyboardButton("❌ Отменить", callback_data="cancel")
+        ]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        f"Вот что вы ввели:\n\n{text}\n\nПодтвердить?",
+        reply_markup=reply_markup
+    )
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if "pending_quote" not in context.user_data:
+        await query.edit_message_text("⚠️ Данные устарели.")
+        return
+
+    quote = context.user_data["pending_quote"]
+    mode = context.user_data.get("mode")
+
+    if query.data == "confirm":
+        if mode == "suggest":
+            DATA["suggestions"].append({
+                "user_id": update.effective_user.id,
+                "quote": quote
+            })
+            save_data(DATA)
+            await query.edit_message_text("✅ Цитата отправлена на рассмотрение.")
+
+        elif mode == "add":
+            DATA["quotes"].append(quote)
+            save_data(DATA)
+            await query.edit_message_text("🔥 Цитата добавлена.")
+
+    elif query.data == "cancel":
+        await query.edit_message_text("❌ Действие отменено.")
+
+    context.user_data.clear()
 
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     commands_text = (
