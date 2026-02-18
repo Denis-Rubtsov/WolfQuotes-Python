@@ -203,7 +203,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "cancel":
         await query.edit_message_text("❌ Действие отменено.")
 
-     context.user_data.clear()
+    context.user_data.clear()
 
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     commands_text = (
