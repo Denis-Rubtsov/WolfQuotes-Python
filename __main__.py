@@ -258,6 +258,8 @@ def main():
     application.add_handler(CommandHandler("help", show_commands))
     application.add_handler(CommandHandler("start", show_commands))
     application.add_handler(CommandHandler("reject", reject))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    application.add_handler(CallbackQueryHandler(button_handler))
 
     print("Бот запущен. Нажми Ctrl+C для выхода.")
     application.run_polling()
