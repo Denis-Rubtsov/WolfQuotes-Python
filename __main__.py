@@ -207,7 +207,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        'Добро пожаловать в бот Вълчьи цитаты"! Этот бот создан @TheSameFail\n\n'
+        'Добро пожаловать в бот "Вълчьи цитаты"! Этот бот создан @TheSameFail\n\n'
         "Здесь вы можете предложить свою цитату. Ниже будут приведены все доступные команды\n\n"
         "Список команд:\n\n"
         "/suggest - предложить новую цитату\n"
