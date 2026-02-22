@@ -205,6 +205,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data.clear()
 
+async def start_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        'Добро пожаловать в бот Вълчьи цитаты"! Этот бот создан @TheSameFail\n\n'
+        "Здесь вы можете предложить свою цитату. Ниже будут приведены все доступные команды\n\n"
+        "Список команд:\n\n"
+        "/suggest - предложить новую цитату\n"
+        "/help - показать список команд\n"
+        "/start - старт бота\n"
+    )
+    await update.message.reply_text(text)
+
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id == ADMIN_ID:
@@ -222,9 +233,9 @@ async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         commands_text = (
             '📜 Список команд бота "Вълчьи цитаты":\n\n'
-            "/suggest <цитата> - предложить новую цитату\n"
+            "/suggest - предложить новую цитату\n"
             "/help - показать список команд\n"
-            "/start - приветствие и список команд\n"
+            "/start - старт бота\n"
         )
     await update.message.reply_text(commands_text)
 
@@ -235,6 +246,7 @@ async def post_init(application):
     public_commands = [
         BotCommand("suggest", "Предложить новую цитату"),
         BotCommand("help", "Список всех команд"),
+        BotCommand("start", "Старт бота"),
     ]
 
     # Команды только для админа
