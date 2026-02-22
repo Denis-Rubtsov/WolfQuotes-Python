@@ -257,7 +257,6 @@ async def post_init(application):
         BotCommand("reject", "Отклонить цитату"),
     ]
 
-    # Устанавливаем публичные команды
     await application.bot.set_my_commands(
         public_commands,
         scope=BotCommandScopeDefault()
@@ -295,7 +294,7 @@ def main():
     application.add_handler(CommandHandler("listsuggest", listsuggest))
     application.add_handler(CommandHandler("approve", approve))
     application.add_handler(CommandHandler("help", show_commands))
-    application.add_handler(CommandHandler("start", show_commands))
+    application.add_handler(CommandHandler("start", start_message))
     application.add_handler(CommandHandler("reject", reject))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     application.add_handler(CallbackQueryHandler(button_handler))
