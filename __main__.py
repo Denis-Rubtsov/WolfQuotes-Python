@@ -229,16 +229,33 @@ async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(commands_text)
 
 async def post_init(application):
-    from telegram import BotCommand
-    commands = [
+    from telegram import BotCommand, BotCommandScopeDefault, BotCommandScopeChat
+
+    # Команды для всех
+    public_commands = [
         BotCommand("suggest", "Предложить новую цитату"),
-        BotCommand("addquote", "Добавить цитату (недоступна обычным смертным)"),
-        BotCommand("listsuggest", "Показать предложения (недоступна обычным смертным)"),
-        BotCommand("approve", "Одобрить цитату по номеру (недоступна обычным смертным)"),
         BotCommand("help", "Список всех команд"),
-        BotCommand("reject", "Отклонить цитату (недоступна обычным смертным)")
     ]
-    await application.bot.set_my_commands(commands)
+
+    # Команды только для админа
+    admin_commands = [
+        BotCommand("addquote", "Добавить цитату"),
+        BotCommand("listsuggest", "Показать предложения"),
+        BotCommand("approve", "Одобрить цитату"),
+        BotCommand("reject", "Отклонить цитату"),
+    ]
+
+    # Устанавливаем публичные команды
+    await application.bot.set_my_commands(
+        public_commands,
+        scope=BotCommandScopeDefault()
+    )
+
+    # Устанавливаем админские команды только для тебя
+    await application.bot.set_my_commands(
+        public_commands + admin_commands,
+        scope=BotCommandScopeChat(chat_id=ADMIN_ID)
+    )
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -258,7 +275,7 @@ def main():
         print("Не найден TELEGRAM_BOT_TOKEN в переменных среды")
         return
 
-    application = Application.builder().token(token).build()
+    application = Application.builder().token(token).post_init(post_init).build()
 
     application.add_handler(InlineQueryHandler(inline_query_handler))
     application.add_handler(CommandHandler("suggest", suggest))
