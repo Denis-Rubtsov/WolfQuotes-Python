@@ -64,6 +64,13 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 def get_random_quote():
     return random.choice(DATA["quotes"])
 
+def quote_exists(new_quote: str) -> bool:
+    normalized = new_quote.strip().lower()
+    return any(
+        q.strip().lower() == normalized
+        for q in DATA["quotes"]
+    )
+
 async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.inline_query.query.strip()
 
@@ -132,10 +139,13 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if index < 0 or index >= len(DATA["suggestions"]):
         await update.message.reply_text("Неверный номер цитаты")
         return
-    quote = DATA["suggestions"].pop(index)["quote"]
-    DATA["quotes"].append(quote)
-    save_data(DATA)
-    await update.message.reply_text("Цитата одобрена и добавлена в основной список")
+    if not (quote_exists(DATA["quotes"][index])):
+        quote = DATA["suggestions"].pop(index)["quote"]
+        DATA["quotes"].append(quote)
+        save_data(DATA)
+        await update.message.reply_text("Цитата одобрена и добавлена в основной список")
+    else:
+        await update.message.reply_text("⚠️ Такая цитата уже существует.")
 
 async def reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -198,9 +208,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("✅ Цитата отправлена на рассмотрение.")
 
         elif mode == "add":
-            DATA["quotes"].append(quote)
-            save_data(DATA)
-            await query.edit_message_text("🔥 Цитата добавлена.")
+            if not (quote_exists(quote)):
+                DATA["quotes"].append(quote)
+                save_data(DATA)
+                await query.edit_message_text("🔥 Цитата добавлена.")
+            else:
+                await update.message.reply_text("⚠️ Такая цитата уже существует.")
 
     elif query.data == "cancel":
         await query.edit_message_text("❌ Действие отменено.")
