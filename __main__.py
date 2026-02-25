@@ -221,7 +221,7 @@ async def start_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def all_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = ""
     quotes = DATA["quotes"]
-    for i in len(quotes):
+    for i in range(len(quotes)):
         text += f"{i +1}. {quotes[i]} \n"
     await update.message.reply_text(text)
 
