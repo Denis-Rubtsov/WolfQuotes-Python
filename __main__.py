@@ -1,6 +1,8 @@
 import os
 import random
 import json
+
+from h11 import Data
 from telegram import (
     InlineQueryResultArticle,
     InputTextMessageContent,
@@ -217,7 +219,11 @@ async def start_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text)
 
 async def all_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(DATA["quotes"])
+    text = ()
+    quotes = DATA["quotes"]
+    for i in len(quotes):
+        text += f"{i +1}. {quotes[i]} \n"
+    await update.message.reply_text(text)
 
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
