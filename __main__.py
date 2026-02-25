@@ -216,6 +216,9 @@ async def start_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text)
 
+async def all_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(DATA["quotes"])
+
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id == ADMIN_ID:
@@ -255,6 +258,7 @@ async def post_init(application):
         BotCommand("listsuggest", "Показать предложения"),
         BotCommand("approve", "Одобрить цитату"),
         BotCommand("reject", "Отклонить цитату"),
+        BotCommand("list", "Все цитаты"),
     ]
 
     await application.bot.set_my_commands(
@@ -296,6 +300,7 @@ def main():
     application.add_handler(CommandHandler("help", show_commands))
     application.add_handler(CommandHandler("start", start_message))
     application.add_handler(CommandHandler("reject", reject))
+    application.add_handler(CommandHandler("list", all_quotes))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     application.add_handler(CallbackQueryHandler(button_handler))
 
