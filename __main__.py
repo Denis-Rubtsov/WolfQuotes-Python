@@ -213,7 +213,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 save_data(DATA)
                 await query.edit_message_text("🔥 Цитата добавлена.")
             else:
-                await update.message.reply_text("⚠️ Такая цитата уже существует.")
+                await query.edit_message_text("⚠️ Такая цитата уже существует.")
 
     elif query.data == "cancel":
         await query.edit_message_text("❌ Действие отменено.")
