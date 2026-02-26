@@ -258,26 +258,25 @@ async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/suggest - предложить новую цитату\n"
             "/help - показать список команд\n"
             "/start - старт бота\n"
+            "/list - показать все цитаты"
         )
     await update.message.reply_text(commands_text)
 
 async def post_init(application):
     from telegram import BotCommand, BotCommandScopeDefault, BotCommandScopeChat
 
-    # Команды для всех
     public_commands = [
         BotCommand("suggest", "Предложить новую цитату"),
         BotCommand("help", "Список всех команд"),
         BotCommand("start", "Старт бота"),
+        BotCommand("list", "Показать все цитаты"),
     ]
 
-    # Команды только для админа
     admin_commands = [
         BotCommand("addquote", "Добавить цитату"),
         BotCommand("listsuggest", "Показать предложения"),
         BotCommand("approve", "Одобрить цитату"),
         BotCommand("reject", "Отклонить цитату"),
-        BotCommand("list", "Все цитаты"),
     ]
 
     await application.bot.set_my_commands(
@@ -285,7 +284,6 @@ async def post_init(application):
         scope=BotCommandScopeDefault()
     )
 
-    # Устанавливаем админские команды только для тебя
     await application.bot.set_my_commands(
         public_commands + admin_commands,
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
