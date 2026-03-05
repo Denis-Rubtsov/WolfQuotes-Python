@@ -307,7 +307,7 @@ class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             # раздаём голосовые файлы
-            if self.path.startswith("/voice/"):
+            if self.path.startswith("voice/"):
                 filename = os.path.basename(self.path)
                 filepath = os.path.join(VOICE_FOLDER, filename)
                 if os.path.exists(filepath):
