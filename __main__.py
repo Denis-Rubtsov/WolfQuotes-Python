@@ -29,6 +29,7 @@ load_dotenv()
 
 DATA_FILE = "/data/quotes.json"
 VOICE_FOLDER = "/data/voice"
+PORT = int(os.getenv("PORT", 8080))
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -302,35 +303,51 @@ async def post_init(application):
     )
 
 class HealthHandler(BaseHTTPRequestHandler):
+
     def do_GET(self):
+        try:
+            # раздаём голосовые файлы
+            if self.path.startswith("/voice/"):
+                filename = os.path.basename(self.path)
+                filepath = os.path.join(VOICE_FOLDER, filename)
+                if os.path.exists(filepath):
+                    self.send_response(200)
+                    self.send_header("Content-Type", "audio/ogg")
+                    self.end_headers()
+                    with open(filepath, "rb") as f:
+                        self.wfile.write(f.read())
+                    return
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+                    self.wfile.write(b"File not found")
+                    return
 
-        if self.path.startswith("/voice/"):
-            filename = self.path.split("/")[-1]
-            filepath = os.path.join(VOICE_FOLDER, filename)
-
-            if os.path.exists(filepath):
+            # healthcheck
+            if self.path == "/":
                 self.send_response(200)
-                self.send_header("Content-type", "audio/ogg")
                 self.end_headers()
-
-                with open(filepath, "rb") as f:
-                    self.wfile.write(f.read())
+                self.wfile.write(b"Bot is running!")
                 return
 
-        if self.path == "/":
-            self.send_response(200)
+            # всё остальное
+            self.send_response(404)
             self.end_headers()
-            self.wfile.write(b"Bot is running!")
-            return
+            self.wfile.write(b"Not found")
 
-        self.send_response(404)
-        self.end_headers()
+        except Exception as e:
+            print("Ошибка в HTTPHandler:", e)
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(b"Server error")
 
 def run_http_server():
-    port = int(os.getenv("PORT", 5000))
-    server = HTTPServer(("0.0.0.0", port), HealthHandler)
-    print(f"HTTP healthcheck server запущен на порту {port}")
-    server.serve_forever()
+    try:
+        server = HTTPServer(("0.0.0.0", PORT), HealthHandler)  # type: ignore
+        print(f"HTTP server listening on port {PORT}")
+        server.serve_forever()
+    except Exception as e:
+        print("Ошибка при запуске HTTP сервера:", e)
 
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
