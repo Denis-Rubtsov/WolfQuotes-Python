@@ -327,7 +327,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 def run_http_server():
-    port = int(os.getenv("PORT", 8080))
+    port = int(os.getenv("PORT", 5000))
     server = HTTPServer(("0.0.0.0", port), HealthHandler)
     print(f"HTTP healthcheck server запущен на порту {port}")
     server.serve_forever()
