@@ -109,7 +109,6 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             id=str(uuid4()),
             title=f"Мудрость №{quote_number}, записанная волком",
             voice_url=voice_url,
-            caption=quote_text
         )
     ]
 
@@ -357,5 +356,5 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    threading.Thread(target=run_http_server, daemon=True).start()
+    threading.Thread(target=run_http_server).start()
     main()
