@@ -8,7 +8,8 @@ from telegram import (
     InputTextMessageContent,
     Update,
     InlineKeyboardButton,
-    InlineKeyboardMarkup
+    InlineKeyboardMarkup,
+    InlineQueryResultVoice
 )
 from telegram.ext import (
     Application,
@@ -27,6 +28,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 load_dotenv()
 
 DATA_FILE = "/data/quotes.json"
+VOICE_FOLDER = "/data/voice"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -76,6 +78,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     quote_text = None
     title = "Вспомнить мудрость"
+    quote_number = 0
 
     # если пользователь ввёл число — считаем, что это номер цитаты
     if query.isdigit():
@@ -83,11 +86,15 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         if 0 <= index < len(DATA["quotes"]):
             quote_text = DATA["quotes"][index]
             title = f"Мудрость №{query}"
+            quote_number = query
         else:
             quote_text = "❌ Цитаты с таким номером не существует."
             title = "Ошибка"
     else:
         quote_text = get_random_quote()
+        quote_number = Data["quotes"].index(quote_text) + 1
+
+    voice_url = f"http://31.128.45.48:8080/voice/{quote_number}.ogg"
 
     results = [
         InlineQueryResultArticle(
@@ -97,6 +104,12 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 f"{quote_text}"
             ),
             description=quote_text[:80]
+        ),
+        InlineQueryResultVoice(
+            id=str(uuid4()),
+            title=f"Мудрость №{quote_number}, записанная волком",
+            voice_url=voice_url,
+            caption=quote_text
         )
     ]
 
@@ -106,7 +119,7 @@ async def suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mode"] = "suggest"
     await update.message.reply_text("✍️ Введите цитату для предложения.")
 
-async def addquote(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         await update.message.reply_text("У вас нет прав для добавления цитат")
         return
@@ -114,7 +127,7 @@ async def addquote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mode"] = "add"
     await update.message.reply_text("🐺 Введите цитату для добавления.")
 
-async def listsuggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def list_suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("У вас нет прав для просмотра предложений")
@@ -291,9 +304,28 @@ async def post_init(application):
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
+
+        if self.path.startswith("/voice/"):
+            filename = self.path.split("/")[-1]
+            filepath = os.path.join(VOICE_FOLDER, filename)
+
+            if os.path.exists(filepath):
+                self.send_response(200)
+                self.send_header("Content-type", "audio/ogg")
+                self.end_headers()
+
+                with open(filepath, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
+        if self.path == "/":
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot is running!")
+            return
+
+        self.send_response(404)
         self.end_headers()
-        self.wfile.write(b"Bot is running!")
 
 def run_http_server():
     port = int(os.getenv("PORT", 8080))
@@ -311,8 +343,8 @@ def main():
 
     application.add_handler(InlineQueryHandler(inline_query_handler))
     application.add_handler(CommandHandler("suggest", suggest))
-    application.add_handler(CommandHandler("addquote", addquote))
-    application.add_handler(CommandHandler("listsuggest", listsuggest))
+    application.add_handler(CommandHandler("addquote", add_quote))
+    application.add_handler(CommandHandler("listsuggest", list_suggest))
     application.add_handler(CommandHandler("approve", approve))
     application.add_handler(CommandHandler("help", show_commands))
     application.add_handler(CommandHandler("start", start_message))
