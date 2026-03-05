@@ -95,7 +95,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         quote_text = get_random_quote()
         quote_number = Data["quotes"].index(quote_text) + 1
 
-    voice_url = f"http://31.128.45.48:8080/voice/{quote_number}.ogg"
+    voice_url = f"http://31.128.45.48:20/voice/{quote_number}.ogg"
 
     results = [
         InlineQueryResultArticle(
