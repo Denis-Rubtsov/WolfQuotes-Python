@@ -110,6 +110,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             id=str(uuid4()),
             title=f"Мудрость №{quote_number}, записанная волком",
             voice_url=voice_url,
+            caption=voice_url
         )
     ]
 
