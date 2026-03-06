@@ -300,11 +300,8 @@ def main():
         print("Не найден TELEGRAM_BOT_TOKEN в переменных среды")
         return
 
-    try:
-        application = Application.builder().token(token).post_init(post_init).build()
-        add_handlers(application)
-    except Exception as e:
-        report_a_problem(e)
+    application = Application.builder().token(token).post_init(post_init).build()
+    add_handlers(application)
 
     print("Бот запущен. Нажми Ctrl+C для выхода.")
     application.run_polling()
