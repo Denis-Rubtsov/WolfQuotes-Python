@@ -28,8 +28,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 load_dotenv()
 
 DATA_FILE = "/data/quotes.json"
-VOICE_FOLDER = "/data/voice"
-PORT = int(os.getenv("PORT", 8080))
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -95,7 +93,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         quote_text = get_random_quote()
         quote_number = Data["quotes"].index(quote_text) + 1
 
-    voice_url = f"http://31.128.45.48:20/voice/{quote_number}.ogg"
+    voice_url = f"http://31.128.45.48:8080/voice/{quote_number}.ogg"
 
     results = [
         InlineQueryResultArticle(
@@ -110,6 +108,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             id=str(uuid4()),
             title=f"Мудрость №{quote_number}, записанная волком",
             voice_url=voice_url,
+            description=quote_text[:80]
         )
     ]
 
@@ -302,7 +301,7 @@ async def post_init(application):
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
     )
 
-class HealthHandler(BaseHTTPRequestHandler):
+"""class HealthHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
@@ -347,7 +346,7 @@ def run_http_server():
         print(f"HTTP server listening on port {PORT}")
         server.serve_forever()
     except Exception as e:
-        print("Ошибка при запуске HTTP сервера:", e)
+        print("Ошибка при запуске HTTP сервера:", e)"""
 
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
@@ -373,5 +372,5 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    threading.Thread(target=run_http_server).start()
+    #threading.Thread(target=run_http_server).start()
     main()
