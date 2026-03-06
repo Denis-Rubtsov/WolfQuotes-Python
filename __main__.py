@@ -275,7 +275,7 @@ async def post_init(application):
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
     )
 
-def add_handlers(application):
+async def add_handlers(application):
     application.add_handler(InlineQueryHandler(inline_query_handler))
     application.add_handler(CommandHandler("suggest", suggest))
     application.add_handler(CommandHandler("addquote", add_quote))
