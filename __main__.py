@@ -28,6 +28,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 load_dotenv()
 
 DATA_FILE = "/data/quotes.json"
+VOICE_FOLDER = "/data/voice"
+PORT = int(os.getenv("PORT", 8080))
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -301,7 +303,7 @@ async def post_init(application):
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
     )
 
-"""class HealthHandler(BaseHTTPRequestHandler):
+class HealthHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
@@ -346,7 +348,7 @@ def run_http_server():
         print(f"HTTP server listening on port {PORT}")
         server.serve_forever()
     except Exception as e:
-        print("Ошибка при запуске HTTP сервера:", e)"""
+        print("Ошибка при запуске HTTP сервера:", e)
 
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
