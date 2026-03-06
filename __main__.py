@@ -66,6 +66,8 @@ def get_inline(query):
 async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.inline_query.query.strip()
     title = "Вспомнить мудрость"
+    quote_text = None
+    voice_url = None
 
     title, quote_text, quote_number, voice_url = get_inline(query)
 
@@ -80,7 +82,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         ),
         InlineQueryResultVoice(
             id=str(uuid4()),
-            title=f"Мудрость №{quote_number}, записанная волком",
+            title=title + " голосом Волка",
             voice_url=voice_url,
         )
     ]
@@ -91,9 +93,14 @@ async def suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mode"] = "suggest"
     await update.message.reply_text("✍️ Введите цитату для предложения.")
 
+def check_user(user):
+    if user.id != ADMIN_ID:
+        print("У вас нет прав на эту команду")
+        return False
+    return True
+
 async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для добавления цитат")
+    if not check_user(update.effective_user):
         return
 
     context.user_data["mode"] = "add"
@@ -101,8 +108,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def list_suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    if user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для просмотра предложений")
+    if not check_user(user):
         return
     if not DATA["suggestions"]:
         await update.message.reply_text("Нет предложенных цитат")
@@ -113,9 +119,7 @@ async def list_suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("\n".join(messages))
 
 async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if user.id != ADMIN_ID:
-        await update.message.reply_text("У вас нет прав для одобрения цитат")
+    if not check_user(update.effective_user):
         return
     if not context.args or not context.args[0].isdigit():
         await update.message.reply_text("Пожалуйста, укажите номер цитаты для одобрения")
@@ -301,7 +305,6 @@ def main():
 
     try:
         application = Application.builder().token(token).post_init(post_init).build()
-
         add_handlers(application)
     except Exception as e:
         report_a_problem(e)
