@@ -2,7 +2,6 @@ import os
 import random
 import json
 
-from h11 import Data
 from telegram import (
     InlineQueryResultArticle,
     InputTextMessageContent,
@@ -22,43 +21,16 @@ from telegram.ext import (
 )
 from uuid import uuid4
 from dotenv import load_dotenv
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
 load_dotenv()
 
 DATA_FILE = "/data/quotes.json"
-VOICE_FOLDER = "/data/voice"
-PORT = int(os.getenv("PORT", 8080))
 
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    else:
-        data = {
-            "quotes": [
-                "Вълкъ слабее льва и тигра, но в цирке не выступает",
-                "Вълкъ - не тот, кто wolf, а тот, кто Canis lupus",
-                "Если вълкъ и работает в цирке, то только начальником",
-                "Если вълкъ голодный, лучше его покормить",
-                "Если запутался, распутайся",
-                "Чтобы не искать выход, посмотри внимательно на вход.",
-                "Каждый может кинуть камень в вълка, но не каждый может кинуть вълка в камень",
-                "Робота - не волк. Работа - это ворк, а волк - это ходить",
-                "Не тот вълкъ кто не вълкъ а вълкъ тот кто вълкъ но не каждый вълкъ настоящий вълкъ а только настоящий вълкъ вълкъ",
-                "Припапупапри",
-                "Не стоит искать вълка там, где его нет, - его там нет",
-                "Друг наполовину - это всегда наполовину друг",
-                "Если дофига умный - умничай, но помни: без ума умничать не выйдет. Так что будь умным, чтобы умничать",
-                "В этой жизни ты либо вълкъ, либо не вълкъ",
-                "Что бессмысленно, то не имеет смысла"
-            ],
-            "suggestions": []
-        }
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        return data
+    else: return None
 
 DATA = load_data()
 
@@ -74,14 +46,7 @@ def quote_exists(new_quote: str) -> bool:
         for q in DATA["quotes"]
     )
 
-async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query.strip()
-
-    quote_text = None
-    title = "Вспомнить мудрость"
-    quote_number = 0
-
-    # если пользователь ввёл число — считаем, что это номер цитаты
+def get_inline(query):
     if query.isdigit():
         index = int(query) - 1
         if 0 <= index < len(DATA["quotes"]):
@@ -96,6 +61,13 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         quote_number = DATA["quotes"].index(quote_text) + 1
 
     voice_url = f"https://s3.ru1.storage.beget.cloud/0d81a339c44a-voice-quotes/voice/{quote_number}.ogg"
+    return title, quote_text, quote_number, voice_url
+
+async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.inline_query.query.strip()
+    title = "Вспомнить мудрость"
+
+    title, quote_text, quote_number, voice_url = get_inline(query)
 
     results = [
         InlineQueryResultArticle(
@@ -302,61 +274,7 @@ async def post_init(application):
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
     )
 
-class HealthHandler(BaseHTTPRequestHandler):
-
-    def do_GET(self):
-        try:
-            # раздаём голосовые файлы
-            if self.path.__contains__("/voice/"):
-                filename = os.path.basename(self.path)
-                filepath = os.path.join(VOICE_FOLDER, filename)
-                if os.path.exists(filepath):
-                    self.send_response(200)
-                    self.send_header("Content-Type", "audio/ogg")
-                    self.end_headers()
-                    with open(filepath, "rb") as f:
-                        self.wfile.write(f.read())
-                    return
-                else:
-                    self.send_response(404)
-                    self.end_headers()
-                    self.wfile.write(b"File not found")
-                    return
-
-            # healthcheck
-            if self.path == "/":
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write(b"Bot is running!")
-                return
-
-            # всё остальное
-            self.send_response(404)
-            self.end_headers()
-            self.wfile.write(b"Not found")
-
-        except Exception as e:
-            print("Ошибка в HTTPHandler:", e)
-            self.send_response(500)
-            self.end_headers()
-            self.wfile.write(b"Server error")
-
-def run_http_server():
-    try:
-        server = HTTPServer(("0.0.0.0", PORT), HealthHandler)  # type: ignore
-        print(f"HTTP server listening on port {PORT}")
-        server.serve_forever()
-    except Exception as e:
-        print("Ошибка при запуске HTTP сервера:", e)
-
-def main():
-    token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
-    if not token:
-        print("Не найден TELEGRAM_BOT_TOKEN в переменных среды")
-        return
-
-    application = Application.builder().token(token).post_init(post_init).build()
-
+def add_handlers(application):
     application.add_handler(InlineQueryHandler(inline_query_handler))
     application.add_handler(CommandHandler("suggest", suggest))
     application.add_handler(CommandHandler("addquote", add_quote))
@@ -369,9 +287,27 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     application.add_handler(CallbackQueryHandler(button_handler))
 
+async def report_a_problem(update: Update, context: ContextTypes.DEFAULT_TYPE, e):
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=f"Ошибка бота: {e}"
+    )
+
+def main():
+    token = os.getenv("TELEGRAM_BOT_TOKEN")  # Задай токен в переменной среды или .env
+    if not token:
+        print("Не найден TELEGRAM_BOT_TOKEN в переменных среды")
+        return
+
+    try:
+        application = Application.builder().token(token).post_init(post_init).build()
+
+        add_handlers(application)
+    except Exception as e:
+        report_a_problem(e)
+
     print("Бот запущен. Нажми Ctrl+C для выхода.")
     application.run_polling()
 
 if __name__ == '__main__':
-    #threading.Thread(target=run_http_server).start()
     main()
