@@ -373,5 +373,5 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    #threading.Thread(target=run_http_server).start()
+    threading.Thread(target=run_http_server).start()
     main()
