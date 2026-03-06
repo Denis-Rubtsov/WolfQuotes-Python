@@ -95,7 +95,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         quote_text = get_random_quote()
         quote_number = DATA["quotes"].index(quote_text) + 1
 
-    voice_url = f"https://s3.ru1.storage.beget.cloud/voice/{quote_number}.ogg"
+    voice_url = f"https://s3.ru1.storage.beget.cloud/0d81a339c44a-voice-quotes/voice/{quote_number}.ogg"
 
     results = [
         InlineQueryResultArticle(
