@@ -275,19 +275,6 @@ async def post_init(application):
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
     )
 
-async def add_handlers(application):
-    application.add_handler(InlineQueryHandler(inline_query_handler))
-    application.add_handler(CommandHandler("suggest", suggest))
-    application.add_handler(CommandHandler("addquote", add_quote))
-    application.add_handler(CommandHandler("listsuggest", list_suggest))
-    application.add_handler(CommandHandler("approve", approve))
-    application.add_handler(CommandHandler("help", show_commands))
-    application.add_handler(CommandHandler("start", start_message))
-    application.add_handler(CommandHandler("reject", reject))
-    application.add_handler(CommandHandler("list", all_quotes))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    application.add_handler(CallbackQueryHandler(button_handler))
-
 async def report_a_problem(update: Update, context: ContextTypes.DEFAULT_TYPE, e):
     await context.bot.send_message(
         chat_id=ADMIN_ID,
@@ -301,7 +288,17 @@ def main():
         return
 
     application = Application.builder().token(token).post_init(post_init).build()
-    add_handlers(application)
+    application.add_handler(InlineQueryHandler(inline_query_handler))
+    application.add_handler(CommandHandler("suggest", suggest))
+    application.add_handler(CommandHandler("addquote", add_quote))
+    application.add_handler(CommandHandler("listsuggest", list_suggest))
+    application.add_handler(CommandHandler("approve", approve))
+    application.add_handler(CommandHandler("help", show_commands))
+    application.add_handler(CommandHandler("start", start_message))
+    application.add_handler(CommandHandler("reject", reject))
+    application.add_handler(CommandHandler("list", all_quotes))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    application.add_handler(CallbackQueryHandler(button_handler))
 
     print("Бот запущен. Нажми Ctrl+C для выхода.")
     application.run_polling()
