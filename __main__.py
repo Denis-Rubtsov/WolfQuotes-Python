@@ -23,6 +23,7 @@ from uuid import uuid4
 from dotenv import load_dotenv
 
 load_dotenv()
+BASIC_URL = os.getenv("BASIC_URL")
 
 DATA_FILE = "/data/quotes.json"
 
@@ -46,7 +47,12 @@ def quote_exists(new_quote: str) -> bool:
         for q in DATA["quotes"]
     )
 
-def get_inline(query):
+async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.inline_query.query.strip()
+    title = "Вспомнить мудрость"
+    quote_text = None
+    voice_url = None
+
     if query.isdigit():
         index = int(query) - 1
         if 0 <= index < len(DATA["quotes"]):
@@ -60,16 +66,7 @@ def get_inline(query):
         quote_text = get_random_quote()
         quote_number = DATA["quotes"].index(quote_text) + 1
 
-    voice_url = f"https://s3.ru1.storage.beget.cloud/0d81a339c44a-voice-quotes/voice/{quote_number}.ogg"
-    return title, quote_text, quote_number, voice_url
-
-async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query.strip()
-    title = "Вспомнить мудрость"
-    quote_text = None
-    voice_url = None
-
-    title, quote_text, quote_number, voice_url = get_inline(query)
+    voice_url = BASIC_URL + f"{quote_number}.ogg"
 
     results = [
         InlineQueryResultArticle(
