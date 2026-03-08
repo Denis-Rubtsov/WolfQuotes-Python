@@ -146,6 +146,7 @@ async def reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Неверный номер цитаты")
         return
     quote = DATA["suggestions"].pop(index)["quote"]
+    save_data(DATA)
     await update.message.reply_text("Цитата оказалась слишком говном")
 
 def save_data(data):
@@ -173,7 +174,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE, quote: str, tag: str):
+async def alert(context: ContextTypes.DEFAULT_TYPE, quote: str, tag: str):
     text = f"Новое предложение от {tag}:\n" + quote
     await context.bot.send_message(
         chat_id=ADMIN_ID,
@@ -199,7 +200,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "quote": quote
             })
             save_data(DATA)
-            alert(update, context, quote, tag)
+            await alert(context, quote, tag)
             await query.edit_message_text("✅ Цитата отправлена на рассмотрение.")
 
         elif mode == "add":
