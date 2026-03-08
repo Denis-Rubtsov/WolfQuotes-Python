@@ -173,6 +173,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE, quote: str, tag: str):
+    text = f"Новое предложение от {tag}:\n" + quote
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=text
+    )
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -186,11 +193,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data == "confirm":
         if mode == "suggest":
+            tag = f"@{update.effective_user.username}" if update.effective_user.username else update.effective_user.first_name
             DATA["suggestions"].append({
-                "user_id": update.effective_user.id,
+                "user_id": tag,
                 "quote": quote
             })
             save_data(DATA)
+            alert(update, context, quote, tag)
             await query.edit_message_text("✅ Цитата отправлена на рассмотрение.")
 
         elif mode == "add":
