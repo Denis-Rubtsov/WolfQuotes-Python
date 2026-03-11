@@ -125,7 +125,8 @@ async def approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if index < 0 or index >= len(DATA["suggestions"]):
         await update.message.reply_text("Неверный номер цитаты")
         return
-    if not (quote_exists(DATA["quotes"][index])):
+    quote = DATA["suggestions"][index]["quote"]
+    if not quote_exists(quote):
         quote = DATA["suggestions"].pop(index)["quote"]
         DATA["quotes"].append(quote)
         save_data(DATA)
@@ -174,16 +175,67 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-async def alert(context: ContextTypes.DEFAULT_TYPE, quote: str, tag: str):
-    text = f"Новое предложение от {tag}:\n" + quote
+async def alert(context: ContextTypes.DEFAULT_TYPE, quote: str, tag: str, index: int):
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ Одобрить", callback_data=f"admin_approve:{index}"),
+            InlineKeyboardButton("❌ Отклонить", callback_data=f"admin_reject:{index}")
+        ]
+    ]
+    text = f"Новое предложение от {tag}: " + quote
     await context.bot.send_message(
         chat_id=ADMIN_ID,
-        text=text
+        text=text,
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    if query.data.startswith("admin_"):
+        if update.effective_user.id != ADMIN_ID:
+            await query.edit_message_text("❌ Нет прав.")
+            return
+
+        action, index = query.data.split(":")
+        index = int(index)
+
+        if index < 0 or index >= len(DATA["suggestions"]):
+            await query.edit_message_text("⚠️ Предложение устарело.")
+            return
+
+        item = DATA["suggestions"][index]
+        quote = item["quote"]
+        user_id = item["user_id"]
+
+        if action == "admin_approve":
+            if not quote_exists(quote):
+                DATA["quotes"].append(quote)
+                DATA["suggestions"].pop(index)
+                save_data(DATA)
+
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text="🐺 Ваша цитата была одобрена!"
+                )
+
+                await query.edit_message_text("✅ Цитата одобрена.")
+            else:
+                await query.edit_message_text("⚠️ Такая цитата уже существует.")
+
+        elif action == "admin_reject":
+            DATA["suggestions"].pop(index)
+            save_data(DATA)
+
+            await context.bot.send_message(
+                chat_id=user_id,
+                text="❌ Ваша цитата была отклонена."
+            )
+
+            await query.edit_message_text("Цитата отклонена.")
+
+        return
 
     if "pending_quote" not in context.user_data:
         await query.edit_message_text("⚠️ Данные устарели.")
@@ -196,11 +248,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if mode == "suggest":
             tag = f"@{update.effective_user.username}" if update.effective_user.username else update.effective_user.first_name
             DATA["suggestions"].append({
-                "user_id": tag,
+                "user_id": update.effective_user.id,
+                "name": tag,
                 "quote": quote
             })
             save_data(DATA)
-            await alert(context, quote, tag)
+            index = len(DATA["suggestions"]) - 1
+            await alert(context, quote, tag, index)
+
             await query.edit_message_text("✅ Цитата отправлена на рассмотрение.")
 
         elif mode == "add":
@@ -246,7 +301,7 @@ async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/addquote <цитата> - добавить цитату\n"
             "/listsuggest - показать предложения цитат\n"
             "/approve <номер> - одобрить предложение и добавить в основной список\n"
-            "/reject - отклонить цитату"
+            "/reject <номер> - отклонить цитату"
         )
     else:
         commands_text = (
