@@ -189,53 +189,49 @@ async def alert(context: ContextTypes.DEFAULT_TYPE, quote: str, tag: str, index:
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
 
-    if query.data.startswith("admin_"):
-        if update.effective_user.id != ADMIN_ID:
-            await query.edit_message_text("❌ Нет прав.")
-            return
+    action, index = query.data.split(":")
+    index = int(index)
 
-        action, index = query.data.split(":")
-        index = int(index)
+    if index < 0 or index >= len(DATA["suggestions"]):
+        await query.edit_message_text("⚠️ Предложение устарело.")
+        return
 
-        if index < 0 or index >= len(DATA["suggestions"]):
-            await query.edit_message_text("⚠️ Предложение устарело.")
-            return
+    item = DATA["suggestions"][index]
+    quote = item["quote"]
+    user_id = item["user_id"]
 
-        item = DATA["suggestions"][index]
-        quote = item["quote"]
-        user_id = item["user_id"]
-
-        if action == "admin_approve":
-            if not quote_exists(quote):
-                DATA["quotes"].append(quote)
-                DATA["suggestions"].pop(index)
-                save_data(DATA)
-
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text="🐺 Ваша цитата была одобрена!"
-                )
-
-                await query.edit_message_text("✅ Цитата одобрена.")
-            else:
-                await query.edit_message_text("⚠️ Такая цитата уже существует.")
-
-        elif action == "admin_reject":
+    if action == "admin_approve":
+        if not quote_exists(quote):
+            DATA["quotes"].append(quote)
             DATA["suggestions"].pop(index)
             save_data(DATA)
 
             await context.bot.send_message(
                 chat_id=user_id,
-                text="❌ Ваша цитата была отклонена."
+                text="🐺 Ваша цитата была одобрена!"
             )
 
-            await query.edit_message_text("Цитата отклонена.")
+            await query.edit_message_text("✅ Цитата одобрена.")
+        else:
+            await query.edit_message_text("⚠️ Такая цитата уже существует.")
 
-        return
+    elif action == "admin_reject":
+        DATA["suggestions"].pop(index)
+        save_data(DATA)
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="❌ Ваша цитата была отклонена."
+        )
+
+        await query.edit_message_text("Цитата отклонена.")
+
+
+async def handle_user_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
 
     if "pending_quote" not in context.user_data:
         await query.edit_message_text("⚠️ Данные устарели.")
@@ -247,19 +243,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "confirm":
         if mode == "suggest":
             tag = f"@{update.effective_user.username}" if update.effective_user.username else update.effective_user.first_name
+
             DATA["suggestions"].append({
                 "user_id": update.effective_user.id,
                 "name": tag,
                 "quote": quote
             })
             save_data(DATA)
+
             index = len(DATA["suggestions"]) - 1
             await alert(context, quote, tag, index)
 
             await query.edit_message_text("✅ Цитата отправлена на рассмотрение.")
 
         elif mode == "add":
-            if not (quote_exists(quote)):
+            if not quote_exists(quote):
                 DATA["quotes"].append(quote)
                 save_data(DATA)
                 await query.edit_message_text("🔥 Цитата добавлена.")
@@ -271,15 +269,32 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data.clear()
 
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data.startswith("admin_"):
+        if update.effective_user.id != ADMIN_ID:
+            await query.edit_message_text("❌ Нет прав.")
+            return
+        await handle_admin_buttons(update, context)
+        return
+
+    await handle_user_confirmation(update, context)
+
+COMMAND_LIST = (
+        '📜 Список команд бота "Вълчьи цитаты":\n\n'
+        "/suggest - предложить новую цитату\n"
+        "/help - показать список команд\n"
+        "/start - старт бота\n"
+        "/list - показать все цитаты"
+        )
+
 async def start_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         'Добро пожаловать в бот "Вълчьи цитаты"! Этот бот создан @TheSameFail\n\n'
         "Здесь вы можете предложить свою цитату. Ниже будут приведены все доступные команды\n\n"
-        "Список команд:\n\n"
-        "/suggest - предложить новую цитату\n"
-        "/help - показать список команд\n"
-        "/start - старт бота\n"
-    )
+    ) + COMMAND_LIST
     await update.message.reply_text(text)
 
 async def all_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -292,11 +307,7 @@ async def all_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id == ADMIN_ID:
-        commands_text = (
-            '📜 Общие команды:\n\n'
-            "/suggest <цитата> - предложить новую цитату\n"
-            "/help - показать список команд\n"
-            "/start - приветствие и список команд\n\n"
+        commands_text = COMMAND_LIST + (
             "Админские команды:\n\n"
             "/addquote <цитата> - добавить цитату\n"
             "/listsuggest - показать предложения цитат\n"
@@ -304,13 +315,7 @@ async def show_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/reject <номер> - отклонить цитату"
         )
     else:
-        commands_text = (
-            '📜 Список команд бота "Вълчьи цитаты":\n\n'
-            "/suggest - предложить новую цитату\n"
-            "/help - показать список команд\n"
-            "/start - старт бота\n"
-            "/list - показать все цитаты"
-        )
+        commands_text = COMMAND_LIST
     await update.message.reply_text(commands_text)
 
 async def post_init(application):
@@ -338,12 +343,6 @@ async def post_init(application):
     await application.bot.set_my_commands(
         public_commands + admin_commands,
         scope=BotCommandScopeChat(chat_id=ADMIN_ID)
-    )
-
-async def report_a_problem(update: Update, context: ContextTypes.DEFAULT_TYPE, e):
-    await context.bot.send_message(
-        chat_id=ADMIN_ID,
-        text=f"Ошибка бота: {e}"
     )
 
 def main():
