@@ -88,7 +88,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         is_personal=True,
         button=InlineQueryResultsButton(
             text=f"Введите номер цитаты (от 1 до {quote_list_lenght})",
-            start_parameter=""
+            start_parameter="start"
         )
     )
 
