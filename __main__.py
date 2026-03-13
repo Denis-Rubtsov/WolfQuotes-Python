@@ -60,6 +60,17 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             quote_text = DATA["quotes"][index]
             title = f"Мудрость №{query}"
             quote_number = query
+        else:
+            results = []
+            await update.inline_query.answer(
+                results,
+                cache_time=0,
+                is_personal=True,
+                button=InlineQueryResultsButton(
+                    text=f"Введите номер цитаты (от 1 до {quote_list_lenght})",
+                    start_parameter="start"
+                )
+            )
     else:
         quote_text = get_random_quote()
         quote_number = DATA["quotes"].index(quote_text) + 1
