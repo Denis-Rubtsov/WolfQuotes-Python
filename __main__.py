@@ -71,6 +71,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                     ),
                     description=quote_text[:80]
                 )]
+            await update.inline_query.answer(results, cache_time=0, is_personal=True)
     else:
         quote_text = get_random_quote()
         quote_number = DATA["quotes"].index(quote_text) + 1
