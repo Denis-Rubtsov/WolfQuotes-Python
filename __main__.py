@@ -62,6 +62,15 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         else:
             quote_text = "❌ Цитаты с таким номером не существует."
             title = "Ошибка"
+            results = [
+                InlineQueryResultArticle(
+                    id=str(uuid4()),
+                    title=title,
+                    input_message_content=InputTextMessageContent(
+                        f"{quote_text}"
+                    ),
+                    description=quote_text[:80]
+                )]
     else:
         quote_text = get_random_quote()
         quote_number = DATA["quotes"].index(quote_text) + 1
