@@ -82,7 +82,15 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         )
     ]
     quote_list_lenght = len(DATA["quotes"])
-    await update.inline_query.answer(results, cache_time=0, is_personal=True, button=InlineQueryResultsButton(text=f"Введите номер цитаты (от 1 до {quote_list_lenght})"))
+    await update.inline_query.answer(
+        results,
+        cache_time=0,
+        is_personal=True,
+        button=InlineQueryResultsButton(
+            text=f"Введите номер цитаты (от 1 до {quote_list_lenght})",
+            start_parameter=""
+        )
+    )
 
 async def suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mode"] = "suggest"
