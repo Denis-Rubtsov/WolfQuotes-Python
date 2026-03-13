@@ -8,7 +8,8 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InlineQueryResultVoice
+    InlineQueryResultVoice,
+    InlineQueryResultsButton
 )
 from telegram.ext import (
     Application,
@@ -59,19 +60,6 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             quote_text = DATA["quotes"][index]
             title = f"Мудрость №{query}"
             quote_number = query
-        else:
-            quote_text = "❌ Цитаты с таким номером не существует."
-            title = "Ошибка"
-            results = [
-                InlineQueryResultArticle(
-                    id=str(uuid4()),
-                    title=title,
-                    input_message_content=InputTextMessageContent(
-                        f"{quote_text}"
-                    ),
-                    description=quote_text[:80]
-                )]
-            await update.inline_query.answer(results, cache_time=0, is_personal=True)
     else:
         quote_text = get_random_quote()
         quote_number = DATA["quotes"].index(quote_text) + 1
@@ -93,8 +81,8 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             voice_url=voice_url,
         )
     ]
-
-    await update.inline_query.answer(results, cache_time=0, is_personal=True)
+    quote_list_lenght = len(DATA["quotes"])
+    await update.inline_query.answer(results, cache_time=0, is_personal=True, button=InlineQueryResultsButton(text=f"Введите номер цитаты (от 1 до {quote_list_lenght})"))
 
 async def suggest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["mode"] = "suggest"
