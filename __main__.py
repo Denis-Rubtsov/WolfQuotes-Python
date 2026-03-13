@@ -53,6 +53,7 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     title = "Вспомнить мудрость"
     quote_text = None
     voice_url = None
+    quote_list_lenght = len(DATA["quotes"])
 
     if query.isdigit():
         index = int(query) - 1
@@ -92,7 +93,6 @@ async def inline_query_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             voice_url=voice_url,
         )
     ]
-    quote_list_lenght = len(DATA["quotes"])
     await update.inline_query.answer(
         results,
         cache_time=0,
